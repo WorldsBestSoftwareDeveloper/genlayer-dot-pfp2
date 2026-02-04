@@ -7,8 +7,8 @@ export default function Home() {
   const logoRef = useRef(null);
 
   const [img, setImg] = useState(null);
-  const [dotSize, setDotSize] = useState(5);
-  const [density, setDensity] = useState(6);
+  const [dotSize, setDotSize] = useState(4);
+  const [density, setDensity] = useState(5);
   const [logoOpacity, setLogoOpacity] = useState(0.4);
 
   useEffect(() => {
@@ -27,7 +27,7 @@ export default function Home() {
     const image = new Image();
     image.onload = () => {
       setImg(image);
-      generate(image); // 🔥 instant preview
+      generate(image); // 🔥 immediate preview
     };
     image.src = URL.createObjectURL(file);
   };
@@ -40,23 +40,37 @@ export default function Home() {
     canvas.width = size;
     canvas.height = size;
 
-    ctx.fillStyle = "#000";
+    ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, size, size);
 
     ctx.drawImage(image, 0, 0, size, size);
     const data = ctx.getImageData(0, 0, size, size).data;
 
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, size, size);
     ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = "#000";
 
-    for (let y = 0; y < size; y += density) {
-      for (let x = 0; x < size; x += density) {
-        const i = (y * size + x) * 4;
-        const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
-        const r = dotSize * (1 - brightness / 255);
+    const spacing = density * density * 0.5;
+    const gamma = 1.8;
 
-        if (r > 0.4) {
+    for (let y = 0; y < size; y += spacing) {
+      for (let x = 0; x < size; x += spacing) {
+        const i = (Math.floor(y) * size + Math.floor(x)) * 4;
+
+        const brightness =
+          0.299 * data[i] +
+          0.587 * data[i + 1] +
+          0.114 * data[i + 2];
+
+        const normalized = brightness / 255;
+        const adjusted = Math.pow(1 - normalized, gamma);
+        const rawR = dotSize * adjusted;
+
+        const minR = 0.6;
+        const maxR = dotSize * 0.9;
+        const r = Math.min(Math.max(rawR, minR), maxR);
+
+        if (r > 0.5) {
           ctx.beginPath();
           ctx.arc(x, y, r, 0, Math.PI * 2);
           ctx.fill();
@@ -90,12 +104,13 @@ export default function Home() {
   };
 
   const shareToX = () => {
-    const text = encodeURIComponent(
-      "I just generated my AI dot PFP using GenLayer 🔥"
-    );
-    const url = encodeURIComponent(window.location.href);
+    const text =
+      "Just generated my GenLayer dot-style PFP 🧬⚫⚪";
+    const url = "https://genlayer.ai";
     window.open(
-      `https://twitter.com/intent/tweet?text=${text}&url=${url}`,
+      `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+        text
+      )}&url=${encodeURIComponent(url)}`,
       "_blank"
     );
   };
@@ -124,7 +139,7 @@ export default function Home() {
 
       <canvas
         ref={canvasRef}
-        className="w-full max-w-sm aspect-square border border-white rounded-xl mb-6 bg-black"
+        className="w-full max-w-sm aspect-square border border-white rounded-xl mb-6 bg-white"
       />
 
       {/* Controls */}
@@ -133,15 +148,15 @@ export default function Home() {
           label="Dot Size"
           value={dotSize}
           min={2}
-          max={10}
+          max={8}
           onChange={setDotSize}
         />
 
         <Slider
           label="Density"
           value={density}
-          min={4}
-          max={12}
+          min={3}
+          max={7}
           onChange={setDensity}
         />
 
@@ -155,7 +170,7 @@ export default function Home() {
         />
       </div>
 
-      <div className="flex gap-4 mt-8">
+      <div className="flex gap-3 mt-8">
         <button
           onClick={download}
           className="px-8 py-3 bg-white text-black rounded-full text-sm hover:opacity-80 transition"
@@ -189,7 +204,10 @@ function Slider({ label, value, min, max, step = 1, onChange }) {
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full appearance-none h-2 rounded-full bg-white/20 accent-white"
+        className="
+          w-full appearance-none h-2 rounded-full
+          bg-white/20 accent-white
+        "
       />
     </div>
   );
